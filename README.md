@@ -68,3 +68,37 @@ parseExprExp ...
 parseExprPat :: String -> Q Pat
 parseExprPat ...
 ```
+
+An example of MetaHaskell using the power function:
+```haskell
+{-# LANGUAGE MetaHaskell #-}
+
+import MiniML
+import Language.MiniML.Pretty
+import Text.PrettyPrint.Mainland
+
+main :: IO ()
+main = do
+    print $ ppr $ erase $ power 11 [exp|x|]
+    print $ ppr $ erase $ power' 11 [exp|x|]
+
+power :: Int -> [exp|a :> Int|] -> [exp|a :> Int|]
+power n x
+    | n == 0     = [exp|1|]
+    | n == 1     = [exp|$x|]
+    | even n     = square (power (n `div` 2) x)
+    | otherwise  = [exp|$x * $(power (n-1) x)|]
+  where
+    square :: [exp|a :> Int|] -> [exp|a :> Int|]
+    square x = [exp|$(x) * $(x)|]
+
+power' :: Int -> [exp|a :> Int|] -> [exp|a :> Int|]
+power' n x
+    | n == 0     = [exp|1|]
+    | n == 1     = [exp|$x|]
+    | even n     = square (power' (n `div` 2) x)
+    | otherwise  = [exp|$x * $(power' (n-1) x)|]
+  where
+    square :: [exp|a :> Int|] -> [exp|a :> Int|]
+    square x = [exp|let { y = $(x) } in y * y|]
+```
